@@ -53,7 +53,6 @@ src/main/java/com/zixin/blogplatform
    - MySQL 8.x
 2. **配置数据库**
    - 在 `application.yml` 配置 `spring.datasource`（URL/用户名/密码）
-   - 若需要自动建表，可使用 `schema.sql`（仓库中提供）
 3. **运行**
    - `mvn spring-boot:run` 或通过 IDE 直接运行 `BlogPlatformApplication`
 4. **后台访问**
