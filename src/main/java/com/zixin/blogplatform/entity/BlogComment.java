@@ -1,12 +1,19 @@
 package com.zixin.blogplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.Date;
 
 @Data
+@TableName("blog_comment")
 public class BlogComment {
+
+    @TableId(type = IdType.AUTO)
     private Long commentId;
 
     private Long blogId;
@@ -24,15 +31,13 @@ public class BlogComment {
 
     private String commentatorIp;
 
-    private String replyBody;
+    private Long parentCommentId;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Date replyCreateTime;
+    // 0 - parent comment, 1 - reply
+    private Long commentStatus;
 
-    private Byte commentStatus;
-
+    @TableLogic(value = "0", delval = "1")
     private Byte isDeleted;
-
 
     public void setCommentator(String commentator) {
         this.commentator = commentator == null ? null : commentator.trim();
@@ -54,28 +59,7 @@ public class BlogComment {
         this.commentatorIp = commentatorIp == null ? null : commentatorIp.trim();
     }
 
-    public void setReplyBody(String replyBody) {
-        this.replyBody = replyBody == null ? null : replyBody.trim();
-    }
 
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", commentId=").append(commentId);
-        sb.append(", blogId=").append(blogId);
-        sb.append(", commentator=").append(commentator);
-        sb.append(", email=").append(email);
-        sb.append(", websiteUrl=").append(websiteUrl);
-        sb.append(", commentBody=").append(commentBody);
-        sb.append(", commentCreateTime=").append(commentCreateTime);
-        sb.append(", commentatorIp=").append(commentatorIp);
-        sb.append(", replyBody=").append(replyBody);
-        sb.append(", replyCreateTime=").append(replyCreateTime);
-        sb.append(", commentStatus=").append(commentStatus);
-        sb.append(", isDeleted=").append(isDeleted);
-        sb.append("]");
-        return sb.toString();
-    }
+
+
 }

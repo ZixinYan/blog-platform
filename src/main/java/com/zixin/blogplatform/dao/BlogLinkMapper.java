@@ -1,11 +1,14 @@
 package com.zixin.blogplatform.dao;
 
-import com.site.blog.my.core.entity.BlogLink;
-import com.site.blog.my.core.util.PageQueryUtil;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zixin.blogplatform.entity.BlogLink;
+import com.zixin.blogplatform.util.PageQueryUtil;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
-public interface BlogLinkMapper {
+@Mapper
+public interface BlogLinkMapper extends BaseMapper<BlogLink> {
     int deleteByPrimaryKey(Integer linkId);
 
     int insert(BlogLink record);

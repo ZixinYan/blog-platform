@@ -1,88 +1,25 @@
 package com.zixin.blogplatform.service;
 
-import com.site.blog.my.core.controller.vo.BlogDetailVO;
-import com.site.blog.my.core.controller.vo.SimpleBlogListVO;
-import com.site.blog.my.core.entity.Blog;
-import com.site.blog.my.core.util.PageQueryUtil;
-import com.site.blog.my.core.util.PageResult;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.zixin.blogplatform.entity.Blog;
+import com.zixin.blogplatform.util.PageResult;
+import com.zixin.blogplatform.util.R;
 
-import java.util.List;
 
-public interface BlogService {
-    String saveBlog(Blog blog);
+import java.util.Map;
 
-    PageResult getBlogsPage(PageQueryUtil pageUtil);
 
-    Boolean deleteBatch(Integer[] ids);
+public interface BlogService extends IService<Blog> {
 
-    int getTotalBlogs();
+    R queryBlogById(Long id);
 
-    /**
-     * 根据id获取详情
-     *
-     * @param blogId
-     * @return
-     */
-    Blog getBlogById(Long blogId);
+    PageResult queryPage(Map<String, Object> params);
 
-    /**
-     * 后台修改
-     *
-     * @param blog
-     * @return
-     */
-    String updateBlog(Blog blog);
+    boolean updateBlog(Blog blog);
 
-    /**
-     * 获取首页文章列表
-     *
-     * @param page
-     * @return
-     */
-    PageResult getBlogsForIndexPage(int page);
+    R queryHotBlog(Integer current);
 
-    /**
-     * 首页侧边栏数据列表
-     * 0-点击最多 1-最新发布
-     *
-     * @param type
-     * @return
-     */
-    List<SimpleBlogListVO> getBlogListForIndexPage(int type);
-    /**
-     * 文章详情
-     *
-     * @param blogId
-     * @return
-     */
-    BlogDetailVO getBlogDetail(Long blogId);
+    boolean deleteBlog(Long id);
 
-    /**
-     * 根据标签获取文章列表
-     *
-     * @param tagName
-     * @param page
-     * @return
-     */
-    PageResult getBlogsPageByTag(String tagName, int page);
-
-    /**
-     * 根据分类获取文章列表
-     *
-     * @param categoryId
-     * @param page
-     * @return
-     */
-    PageResult getBlogsPageByCategory(String categoryId, int page);
-
-    /**
-     * 根据搜索获取文章列表
-     *
-     * @param keyword
-     * @param page
-     * @return
-     */
-    PageResult getBlogsPageBySearch(String keyword, int page);
-
-    BlogDetailVO getBlogDetailBySubUrl(String subUrl);
+    R saveBlog(Blog blog);
 }

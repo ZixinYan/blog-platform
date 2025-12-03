@@ -1,133 +1,85 @@
 package com.zixin.blogplatform.controller.admin;
 
 import cn.hutool.captcha.ShearCaptcha;
-import com.site.blog.my.core.entity.AdminUser;
-import com.site.blog.my.core.service.*;
-import org.springframework.stereotype.Controller;
+import com.zixin.blogplatform.config.exception.BizCodeEnum;
+import com.zixin.blogplatform.controller.vo.UserVo;
+import com.zixin.blogplatform.entity.AdminUser;
+import com.zixin.blogplatform.service.AdminUserService;
+import com.zixin.blogplatform.util.MD5Util;
+import com.zixin.blogplatform.util.JwtUtil;
+import com.zixin.blogplatform.util.R;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-@Controller
+@Slf4j
+@RestController
 @RequestMapping("/admin")
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Resource
-    private AdminUserService adminUserService;
-    @Resource
-    private BlogService blogService;
-    @Resource
-    private CategoryService categoryService;
-    @Resource
-    private LinkService linkService;
-    @Resource
-    private TagService tagService;
-    @Resource
-    private CommentService commentService;
-
-
-    @GetMapping({"/login"})
-    public String login() {
-        return "admin/login";
-    }
-
-    @GetMapping({"", "/", "/index", "/index.html"})
-    public String index(HttpServletRequest request) {
-        request.setAttribute("path", "index");
-        request.setAttribute("categoryCount", categoryService.getTotalCategories());
-        request.setAttribute("blogCount", blogService.getTotalBlogs());
-        request.setAttribute("linkCount", linkService.getTotalLinks());
-        request.setAttribute("tagCount", tagService.getTotalTags());
-        request.setAttribute("commentCount", commentService.getTotalComments());
-        return "admin/index";
-    }
-
+    private final AdminUserService adminUserService;
+    private final JwtUtil jwtUtil;
+    /**
+       * 管理员登录
+     */
     @PostMapping(value = "/login")
-    public String login(@RequestParam("userName") String userName,
-                        @RequestParam("password") String password,
-                        @RequestParam("verifyCode") String verifyCode,
-                        HttpSession session) {
-        if (!StringUtils.hasText(verifyCode)) {
-            session.setAttribute("errorMsg", "验证码不能为空");
-            return "admin/login";
-        }
-        if (!StringUtils.hasText(userName) || !StringUtils.hasText(password)) {
-            session.setAttribute("errorMsg", "用户名或密码不能为空");
-            return "admin/login";
-        }
+    public R login(@RequestParam("userName") String userName, @RequestParam("password") String password, @RequestParam("verifyCode") String verifyCode, HttpSession session) {
+        if (!StringUtils.hasText(verifyCode)) {return R.error(BizCodeEnum.SMS_CODE_ERROR.getCode(),BizCodeEnum.SMS_CODE_ERROR.getMsg());}
+        if (!StringUtils.hasText(userName) || !StringUtils.hasText(password)) {return R.error(BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getCode(),BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getMsg());}
         ShearCaptcha shearCaptcha = (ShearCaptcha) session.getAttribute("verifyCode");
         if (shearCaptcha == null || !shearCaptcha.verify(verifyCode)) {
-            session.setAttribute("errorMsg", "验证码错误");
-            return "admin/login";
+            return R.error(BizCodeEnum.SMS_CODE_ERROR.getCode(),BizCodeEnum.SMS_CODE_ERROR.getMsg());
         }
         AdminUser adminUser = adminUserService.login(userName, password);
-        if (adminUser != null) {
-            session.setAttribute("loginUser", adminUser.getNickName());
-            session.setAttribute("loginUserId", adminUser.getAdminUserId());
-            //session过期时间设置为7200秒 即两小时
-            //session.setMaxInactiveInterval(60 * 60 * 2);
-            return "redirect:/admin/index";
-        } else {
-            session.setAttribute("errorMsg", "登陆失败");
-            return "admin/login";
-        }
-    }
-
-    @GetMapping("/profile")
-    public String profile(HttpServletRequest request) {
-        Integer loginUserId = (int) request.getSession().getAttribute("loginUserId");
-        AdminUser adminUser = adminUserService.getUserDetailById(loginUserId);
         if (adminUser == null) {
-            return "admin/login";
+            return R.error(BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getCode(),BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getMsg());
         }
-        request.setAttribute("path", "profile");
-        request.setAttribute("loginUserName", adminUser.getLoginUserName());
-        request.setAttribute("nickName", adminUser.getNickName());
-        return "admin/profile";
+
+        UserVo userVo = new UserVo();
+        userVo.setUserId(adminUser.getAdminUserId());
+        userVo.setUsername(adminUser.getLoginUserName());
+        userVo.setNickname(adminUser.getNickName());
+
+        String token = jwtUtil.generateToken(userVo);
+        return R.ok().setData(token);
     }
 
-    @PostMapping("/profile/password")
-    @ResponseBody
-    public String passwordUpdate(HttpServletRequest request, @RequestParam("originalPassword") String originalPassword,
-                                 @RequestParam("newPassword") String newPassword) {
-        if (!StringUtils.hasText(originalPassword) || !StringUtils.hasText(newPassword)) {
-            return "参数不能为空";
+    /**
+     * 管理员注册
+     */
+    @PostMapping("/register")
+    public R register(@RequestParam("userName") String userName,
+                      @RequestParam("password") String password,
+                      @RequestParam(value = "nickName", required = false) String nickName) {
+        // 基本参数校验
+        if (!StringUtils.hasText(userName) || !StringUtils.hasText(password)) {
+            return R.error(BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getCode(),
+                    BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getMsg());
         }
-        Integer loginUserId = (int) request.getSession().getAttribute("loginUserId");
-        if (adminUserService.updatePassword(loginUserId, originalPassword, newPassword)) {
-            //修改成功后清空session中的数据，前端控制跳转至登录页
-            request.getSession().removeAttribute("loginUserId");
-            request.getSession().removeAttribute("loginUser");
-            request.getSession().removeAttribute("errorMsg");
-            return "success";
-        } else {
-            return "修改失败";
-        }
-    }
 
-    @PostMapping("/profile/name")
-    @ResponseBody
-    public String nameUpdate(HttpServletRequest request, @RequestParam("loginUserName") String loginUserName,
-                             @RequestParam("nickName") String nickName) {
-        if (!StringUtils.hasText(loginUserName) || !StringUtils.hasText(nickName)) {
-            return "参数不能为空";
+        // 检查用户名是否已存在
+        boolean exists = adminUserService.lambdaQuery()
+                .eq(AdminUser::getLoginUserName, userName)
+                .oneOpt()
+                .isPresent();
+        if (exists) {
+            return R.error(BizCodeEnum.LOGIN_ACCOUNT_PASSWORD_INVALID.getCode(), "用户名已存在");
         }
-        Integer loginUserId = (int) request.getSession().getAttribute("loginUserId");
-        if (adminUserService.updateName(loginUserId, loginUserName, nickName)) {
-            return "success";
-        } else {
-            return "修改失败";
-        }
-    }
 
-    @GetMapping("/logout")
-    public String logout(HttpServletRequest request) {
-        request.getSession().removeAttribute("loginUserId");
-        request.getSession().removeAttribute("loginUser");
-        request.getSession().removeAttribute("errorMsg");
-        return "admin/login";
+        // 构造新管理员用户，使用 MD5 加密密码
+        AdminUser adminUser = new AdminUser();
+        adminUser.setLoginUserName(userName);
+        adminUser.setLoginPassword(MD5Util.MD5Encode(password, "UTF-8"));
+        adminUser.setNickName(StringUtils.hasText(nickName) ? nickName : userName);
+        adminUser.setLocked(0);
+
+        boolean saved = adminUserService.save(adminUser);
+        return saved ? R.ok() : R.error();
     }
 }

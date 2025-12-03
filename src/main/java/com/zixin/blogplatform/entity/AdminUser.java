@@ -1,44 +1,32 @@
 package com.zixin.blogplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 @Data
+@TableName("admin_user")
 public class AdminUser {
+
+    @TableId(value = "admin_user_id", type = IdType.AUTO)
     private Integer adminUserId;
 
+    @TableField("login_user_name")
     private String loginUserName;
 
+    @TableField("login_password")
     private String loginPassword;
 
-    private String nickName;
+    private String nickName;        // 这个字段名一致
+    private Integer locked;         // 这个字段名一致
 
-    private Byte locked;
+    // 添加 MyBatis-Plus 的逻辑删除字段
+    @TableLogic(value = "0", delval = "1")
+    private Integer isDeleted;
 
-    public void setLoginUserName(String loginUserName) {
-        this.loginUserName = loginUserName == null ? null : loginUserName.trim();
-    }
+    // 添加时间字段（可选）
+    @TableField(fill = FieldFill.INSERT)
+    private java.util.Date createTime;
 
-
-    public void setLoginPassword(String loginPassword) {
-        this.loginPassword = loginPassword == null ? null : loginPassword.trim();
-    }
-
-    public void setNickName(String nickName) {
-        this.nickName = nickName == null ? null : nickName.trim();
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", adminUserId=").append(adminUserId);
-        sb.append(", loginUserName=").append(loginUserName);
-        sb.append(", loginPassword=").append(loginPassword);
-        sb.append(", nickName=").append(nickName);
-        sb.append(", locked=").append(locked);
-        sb.append("]");
-        return sb.toString();
-    }
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private java.util.Date updateTime;
 }

@@ -1,5 +1,10 @@
 package com.zixin.blogplatform.util;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.zixin.blogplatform.entity.Blog;
+import lombok.Data;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -7,7 +12,10 @@ import java.util.List;
  * 分页工具类
  *
  */
+@Data
 public class PageResult implements Serializable {
+    @Serial
+    private final static long serialVersionUID = 1L;
 
     //总记录数
     private int totalCount;
@@ -36,44 +44,12 @@ public class PageResult implements Serializable {
         this.totalPage = (int) Math.ceil((double) totalCount / pageSize);
     }
 
-    public int getTotalCount() {
-        return totalCount;
-    }
 
-    public void setTotalCount(int totalCount) {
-        this.totalCount = totalCount;
+    public PageResult(IPage<?> page) {
+        this.list = page.getRecords();
+        this.totalCount = (int)page.getTotal();
+        this.pageSize = (int)page.getSize();
+        this.currPage = (int)page.getCurrent();
+        this.totalPage = (int)page.getPages();
     }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public int getTotalPage() {
-        return totalPage;
-    }
-
-    public void setTotalPage(int totalPage) {
-        this.totalPage = totalPage;
-    }
-
-    public int getCurrPage() {
-        return currPage;
-    }
-
-    public void setCurrPage(int currPage) {
-        this.currPage = currPage;
-    }
-
-    public List<?> getList() {
-        return list;
-    }
-
-    public void setList(List<?> list) {
-        this.list = list;
-    }
-
 }

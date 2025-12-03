@@ -1,18 +1,21 @@
 package com.zixin.blogplatform.service;
 
-import com.site.blog.my.core.entity.BlogLink;
-import com.site.blog.my.core.util.PageQueryUtil;
-import com.site.blog.my.core.util.PageResult;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.zixin.blogplatform.entity.BlogLink;
+import com.zixin.blogplatform.util.PageQueryUtil;
+import com.zixin.blogplatform.util.PageResult;
 
 import java.util.List;
 import java.util.Map;
 
-public interface LinkService {
+/**
+ * 友链业务接口
+ * 统一继承 MyBatis-Plus 的 IService，保留原有自定义方法以兼容旧代码。
+ */
+public interface LinkService extends IService<BlogLink> {
+
     /**
      * 查询友链的分页数据
-     *
-     * @param pageUtil
-     * @return
      */
     PageResult getBlogLinkPage(PageQueryUtil pageUtil);
 
@@ -28,8 +31,6 @@ public interface LinkService {
 
     /**
      * 返回友链页面所需的所有数据
-     *
-     * @return
      */
     Map<Byte, List<BlogLink>> getLinksForLinkPage();
 }

@@ -1,82 +1,70 @@
 package com.zixin.blogplatform.service.impl;
 
-import com.site.blog.my.core.dao.BlogCommentMapper;
-import com.site.blog.my.core.entity.BlogComment;
-import com.site.blog.my.core.service.CommentService;
-import com.site.blog.my.core.util.PageQueryUtil;
-import com.site.blog.my.core.util.PageResult;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zixin.blogplatform.controller.vo.CommentVo;
+import com.zixin.blogplatform.dao.BlogCommentMapper;
+import com.zixin.blogplatform.entity.BlogComment;
+import com.zixin.blogplatform.service.CommentService;
+import com.zixin.blogplatform.util.R;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
-public class CommentServiceImpl implements CommentService {
-    @Autowired
-    private BlogCommentMapper blogCommentMapper;
+@Slf4j
+public class CommentServiceImpl extends ServiceImpl<BlogCommentMapper, BlogComment> implements CommentService {
 
     @Override
-    public Boolean addComment(BlogComment blogComment) {
-        return blogCommentMapper.insertSelective(blogComment) > 0;
-    }
+    public R getComments(Long id) {
+        // 1. 根据 BlogId 查询所有未删除的评论
+        List<BlogComment> comments = this.list(new LambdaQueryWrapper<BlogComment>()
+                .eq(BlogComment::getBlogId, id)
+                .eq(BlogComment::getIsDeleted, (byte) 0));
 
-    @Override
-    public PageResult getCommentsPage(PageQueryUtil pageUtil) {
-        List<BlogComment> comments = blogCommentMapper.findBlogCommentList(pageUtil);
-        int total = blogCommentMapper.getTotalBlogComments(pageUtil);
-        PageResult pageResult = new PageResult(comments, total, pageUtil.getLimit(), pageUtil.getPage());
-        return pageResult;
-    }
+        // 2. 找出所有一级评论（parentId = 0 且 commentStatus = 0）
+        List<CommentVo> commentVos = comments.stream()
+                .filter(comment -> comment.getCommentStatus() != null
+                        && comment.getCommentStatus() == 0L
+                        && (comment.getParentCommentId() == null || comment.getParentCommentId() == 0L))
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
 
-    @Override
-    public int getTotalComments() {
-        return blogCommentMapper.getTotalBlogComments(null);
-    }
-
-    @Override
-    public Boolean checkDone(Integer[] ids) {
-        return blogCommentMapper.checkDone(ids) > 0;
-    }
-
-    @Override
-    public Boolean deleteBatch(Integer[] ids) {
-        return blogCommentMapper.deleteBatch(ids) > 0;
-    }
-
-    @Override
-    public Boolean reply(Long commentId, String replyBody) {
-        BlogComment blogComment = blogCommentMapper.selectByPrimaryKey(commentId);
-        //blogComment不为空且状态为已审核，则继续后续操作
-        if (blogComment != null && blogComment.getCommentStatus().intValue() == 1) {
-            blogComment.setReplyBody(replyBody);
-            blogComment.setReplyCreateTime(new Date());
-            return blogCommentMapper.updateByPrimaryKeySelective(blogComment) > 0;
+        // 3. 绑定子评论
+        for (CommentVo commentVo : commentVos) {
+            commentVo.setReplies(getReplies(commentVo.getId(), comments));
         }
-        return false;
+        log.debug("Loaded {} root comments for blogId={}", commentVos.size(), id);
+        return R.ok(commentVos);
     }
 
+
     @Override
-    public PageResult getCommentPageByBlogIdAndPageNum(Long blogId, int page) {
-        if (page < 1) {
-            return null;
-        }
-        Map params = new HashMap();
-        params.put("page", page);
-        //每页8条
-        params.put("limit", 8);
-        params.put("blogId", blogId);
-        params.put("commentStatus", 1);//过滤审核通过的数据
-        PageQueryUtil pageUtil = new PageQueryUtil(params);
-        List<BlogComment> comments = blogCommentMapper.findBlogCommentList(pageUtil);
-        if (!CollectionUtils.isEmpty(comments)) {
-            int total = blogCommentMapper.getTotalBlogComments(pageUtil);
-            PageResult pageResult = new PageResult(comments, total, pageUtil.getLimit(), pageUtil.getPage());
-            return pageResult;
-        }
-        return null;
+    public R deleteComments(Long id) {
+        boolean success = this.removeById(id);
+        log.warn("Delete comment id={}, success={}", id, success);
+        return success ? R.ok() : R.error();
+    }
+
+    private List<CommentVo> getReplies(Long parentId, List<BlogComment> comments) {
+        return comments.stream()
+                .filter(comment -> comment.getParentCommentId() != null
+                        && comment.getParentCommentId().equals(parentId)
+                        && comment.getIsDeleted() != null
+                        && comment.getIsDeleted() == 0)
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+    }
+
+    private CommentVo convertToVO(BlogComment entity) {
+        CommentVo vo = new CommentVo();
+        vo.setId(entity.getCommentId());
+        vo.setContent(entity.getCommentBody());
+        vo.setBlogId(entity.getBlogId());
+        vo.setParentId(entity.getParentCommentId());
+        vo.setCreateTime(entity.getCommentCreateTime());
+        return vo;
     }
 }

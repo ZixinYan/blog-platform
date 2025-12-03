@@ -1,13 +1,12 @@
 package com.zixin.blogplatform.dao;
 
-import com.site.blog.my.core.entity.AdminUser;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zixin.blogplatform.entity.AdminUser;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-public interface AdminUserMapper {
-    int insert(AdminUser record);
-
-    int insertSelective(AdminUser record);
-
+@Mapper
+public interface AdminUserMapper extends BaseMapper<AdminUser> {
     /**
      * 登陆方法
      *
@@ -17,9 +16,7 @@ public interface AdminUserMapper {
      */
     AdminUser login(@Param("userName") String userName, @Param("password") String password);
 
-    AdminUser selectByPrimaryKey(Integer adminUserId);
+    AdminUser selectByPrimaryKey(Long adminUserId);
 
     int updateByPrimaryKeySelective(AdminUser record);
-
-    int updateByPrimaryKey(AdminUser record);
 }

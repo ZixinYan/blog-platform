@@ -1,30 +1,38 @@
 package com.zixin.blogplatform.service.impl;
 
-import com.site.blog.my.core.dao.BlogLinkMapper;
-import com.site.blog.my.core.entity.BlogLink;
-import com.site.blog.my.core.service.LinkService;
-import com.site.blog.my.core.util.PageQueryUtil;
-import com.site.blog.my.core.util.PageResult;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zixin.blogplatform.dao.BlogLinkMapper;
+import com.zixin.blogplatform.entity.BlogLink;
+import com.zixin.blogplatform.service.LinkService;
+import com.zixin.blogplatform.util.PageQueryUtil;
+import com.zixin.blogplatform.util.PageResult;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 友链业务实现
+ * 统一继承 ServiceImpl，保留原有 PageQueryUtil 方式，方便平滑迁移到 JDK17。
+ */
 @Service
-public class LinkServiceImpl implements LinkService {
+@RequiredArgsConstructor
+@Slf4j
+public class LinkServiceImpl extends ServiceImpl<BlogLinkMapper, BlogLink> implements LinkService {
 
-    @Autowired
-    private BlogLinkMapper blogLinkMapper;
+    private final BlogLinkMapper blogLinkMapper;
 
     @Override
     public PageResult getBlogLinkPage(PageQueryUtil pageUtil) {
         List<BlogLink> links = blogLinkMapper.findLinkList(pageUtil);
         int total = blogLinkMapper.getTotalLinks(pageUtil);
-        PageResult pageResult = new PageResult(links, total, pageUtil.getLimit(), pageUtil.getPage());
-        return pageResult;
+        log.debug("Loaded link page={}, limit={}, total={}", pageUtil.getPage(), pageUtil.getLimit(), total);
+        return new PageResult(links, total, pageUtil.getLimit(), pageUtil.getPage());
     }
 
     @Override
@@ -34,7 +42,9 @@ public class LinkServiceImpl implements LinkService {
 
     @Override
     public Boolean saveLink(BlogLink link) {
-        return blogLinkMapper.insertSelective(link) > 0;
+        boolean saved = blogLinkMapper.insertSelective(link) > 0;
+        log.info("Create link name={}, success={}", link.getLinkName(), saved);
+        return saved;
     }
 
     @Override
@@ -44,22 +54,25 @@ public class LinkServiceImpl implements LinkService {
 
     @Override
     public Boolean updateLink(BlogLink tempLink) {
-        return blogLinkMapper.updateByPrimaryKeySelective(tempLink) > 0;
+        boolean updated = blogLinkMapper.updateByPrimaryKeySelective(tempLink) > 0;
+        log.info("Update link id={}, success={}", tempLink.getLinkId(), updated);
+        return updated;
     }
 
     @Override
     public Boolean deleteBatch(Integer[] ids) {
-        return blogLinkMapper.deleteBatch(ids) > 0;
+        boolean deleted = blogLinkMapper.deleteBatch(ids) > 0;
+        log.warn("Delete links ids={}, success={}", Arrays.toString(ids), deleted);
+        return deleted;
     }
 
     @Override
     public Map<Byte, List<BlogLink>> getLinksForLinkPage() {
-        //获取所有链接数据
+        // 获取所有链接数据
         List<BlogLink> links = blogLinkMapper.findLinkList(null);
         if (!CollectionUtils.isEmpty(links)) {
-            //根据type进行分组
-            Map<Byte, List<BlogLink>> linksMap = links.stream().collect(Collectors.groupingBy(BlogLink::getLinkType));
-            return linksMap;
+            // 根据 type 进行分组
+            return links.stream().collect(Collectors.groupingBy(BlogLink::getLinkType));
         }
         return null;
     }

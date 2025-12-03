@@ -1,11 +1,16 @@
 package com.zixin.blogplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.util.Date;
 
 @Data
+@TableName("blog_tag_relation")
 public class BlogTagRelation {
+    @TableId(type = IdType.AUTO)
     private Long relationId;
 
     private Long blogId;
@@ -13,18 +18,4 @@ public class BlogTagRelation {
     private Integer tagId;
 
     private Date createTime;
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", relationId=").append(relationId);
-        sb.append(", blogId=").append(blogId);
-        sb.append(", tagId=").append(tagId);
-        sb.append(", createTime=").append(createTime);
-        sb.append("]");
-        return sb.toString();
-    }
 }

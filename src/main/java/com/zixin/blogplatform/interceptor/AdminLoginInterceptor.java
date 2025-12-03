@@ -1,30 +1,50 @@
 package com.zixin.blogplatform.interceptor;
 
+import com.alibaba.fastjson.JSON;
+import com.zixin.blogplatform.util.JwtUtil;
+import com.zixin.blogplatform.util.R;
+import com.zixin.blogplatform.util.ThreadLocalUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 /**
  * 后台系统身份验证拦截器
- *
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class AdminLoginInterceptor implements HandlerInterceptor {
+
+    private final JwtUtil jwtUtil;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
-        String requestServletPath = request.getServletPath();
-        if (requestServletPath.startsWith("/admin") && request.getSession().getAttribute("loginUser") == null) {
-            request.getSession().setAttribute("errorMsg", "登录状态超时，请重新登陆");
-            response.sendRedirect(request.getContextPath() + "/admin/login");
+        String auth = request.getHeader("Authorization");
+        String uri = request.getRequestURI();
+        log.info("AdminLoginInterceptor preHandle, uri={}, authHeaderPresent={}", uri, auth != null);
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(JSON.toJSONString(R.error(401, "请先登录")));
+            response.getWriter().flush();
             return false;
-        } else {
-            request.getSession().removeAttribute("errorMsg");
-            return true;
         }
+        String token = auth.substring(7);
+        if (!jwtUtil.validateToken(token)) {
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(JSON.toJSONString(R.error(401, "无效或过期的令牌")));
+            response.getWriter().flush();
+            return false;
+        }
+        Map<String,Object> claims = jwtUtil.parseToken(token);
+        ThreadLocalUtil.set(claims);
+        return true;
     }
 
     @Override
@@ -33,6 +53,5 @@ public class AdminLoginInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
-
     }
 }

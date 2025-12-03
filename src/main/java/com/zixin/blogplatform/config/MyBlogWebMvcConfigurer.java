@@ -1,23 +1,29 @@
 package com.zixin.blogplatform.config;
 
-import com.site.blog.my.core.interceptor.AdminLoginInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.zixin.blogplatform.interceptor.AdminLoginInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
+@RequiredArgsConstructor
 public class MyBlogWebMvcConfigurer implements WebMvcConfigurer {
 
-    @Autowired
-    private AdminLoginInterceptor adminLoginInterceptor;
+    private final AdminLoginInterceptor adminLoginInterceptor;
 
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(adminLoginInterceptor).addPathPatterns("/admin/**").excludePathPatterns("/admin/login").excludePathPatterns("/admin/dist/**").excludePathPatterns("/admin/plugins/**");
+        registry.addInterceptor(adminLoginInterceptor)
+                .addPathPatterns("/admin/**")
+                .excludePathPatterns("/admin/login", "/admin/login/**")
+                .excludePathPatterns("/admin/register", "/admin/register/**");
     }
 
+    @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/upload/**").addResourceLocations("file:" + Constants.FILE_UPLOAD_DIC);
+        registry.addResourceHandler("/upload/**")
+                .addResourceLocations("file:" + Constants.FILE_UPLOAD_DIC);
     }
 }

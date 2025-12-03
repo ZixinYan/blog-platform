@@ -1,28 +1,9 @@
 package com.zixin.blogplatform.dao;
 
-import com.site.blog.my.core.entity.BlogComment;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zixin.blogplatform.entity.BlogComment;
+import org.apache.ibatis.annotations.Mapper;
 
-import java.util.List;
-import java.util.Map;
-
-public interface BlogCommentMapper {
-    int deleteByPrimaryKey(Long commentId);
-
-    int insert(BlogComment record);
-
-    int insertSelective(BlogComment record);
-
-    BlogComment selectByPrimaryKey(Long commentId);
-
-    int updateByPrimaryKeySelective(BlogComment record);
-
-    int updateByPrimaryKey(BlogComment record);
-
-    List<BlogComment> findBlogCommentList(Map map);
-
-    int getTotalBlogComments(Map map);
-
-    int checkDone(Integer[] ids);
-
-    int deleteBatch(Integer[] ids);
+@Mapper
+public interface BlogCommentMapper extends BaseMapper<BlogComment> {
 }

@@ -1,101 +1,54 @@
 package com.zixin.blogplatform.controller.admin;
 
-import com.site.blog.my.core.service.CategoryService;
-import com.site.blog.my.core.util.PageQueryUtil;
-import com.site.blog.my.core.util.Result;
-import com.site.blog.my.core.util.ResultGenerator;
-import org.springframework.stereotype.Controller;
-import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
+
+import com.zixin.blogplatform.entity.BlogCategory;
+import com.zixin.blogplatform.service.CategoryService;
+import com.zixin.blogplatform.util.R;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
+import java.util.List;
 
-@Controller
-@RequestMapping("/admin")
+@RestController
+@RequestMapping("/blog/category")
+@RequiredArgsConstructor
+@Slf4j
 public class CategoryController {
 
-    @Resource
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
-    @GetMapping("/categories")
-    public String categoryPage(HttpServletRequest request) {
-        request.setAttribute("path", "categories");
-        return "admin/category";
+    @GetMapping("/list")
+    public R getCategoryList() {
+        log.info("Fetch category list");
+        List<BlogCategory> list = categoryService.list();
+        return R.ok(list);
+    }
+    @GetMapping("/info")
+    public R getCategoryInfo(Long id) {
+        log.info("Fetch category info id={}", id);
+        BlogCategory category = categoryService.getById(id);
+        return R.ok(category);
     }
 
-    /**
-     * 分类列表
-     */
-    @RequestMapping(value = "/categories/list", method = RequestMethod.GET)
-    @ResponseBody
-    public Result list(@RequestParam Map<String, Object> params) {
-        if (ObjectUtils.isEmpty(params.get("page")) || ObjectUtils.isEmpty(params.get("limit"))) {
-            return ResultGenerator.genFailResult("参数异常！");
-        }
-        PageQueryUtil pageUtil = new PageQueryUtil(params);
-        return ResultGenerator.genSuccessResult(categoryService.getBlogCategoryPage(pageUtil));
+    @PostMapping("/save")
+    public R saveCategory(@RequestBody BlogCategory category) {
+        log.info("Create category name={}", category.getCategoryName());
+        categoryService.save(category);
+        return R.ok();
     }
 
-    /**
-     * 分类添加
-     */
-    @RequestMapping(value = "/categories/save", method = RequestMethod.POST)
-    @ResponseBody
-    public Result save(@RequestParam("categoryName") String categoryName,
-                       @RequestParam("categoryIcon") String categoryIcon) {
-        if (!StringUtils.hasText(categoryName)) {
-            return ResultGenerator.genFailResult("请输入分类名称！");
-        }
-        if (!StringUtils.hasText(categoryIcon)) {
-            return ResultGenerator.genFailResult("请选择分类图标！");
-        }
-        if (categoryService.saveCategory(categoryName, categoryIcon)) {
-            return ResultGenerator.genSuccessResult();
-        } else {
-            return ResultGenerator.genFailResult("分类名称重复");
-        }
+    @PutMapping("/update")
+    public R updateCategory(@RequestBody BlogCategory category) {
+        log.info("Update category id={}", category.getCategoryId());
+        categoryService.updateById(category);
+        return R.ok();
     }
 
-
-    /**
-     * 分类修改
-     */
-    @RequestMapping(value = "/categories/update", method = RequestMethod.POST)
-    @ResponseBody
-    public Result update(@RequestParam("categoryId") Integer categoryId,
-                         @RequestParam("categoryName") String categoryName,
-                         @RequestParam("categoryIcon") String categoryIcon) {
-        if (!StringUtils.hasText(categoryName)) {
-            return ResultGenerator.genFailResult("请输入分类名称！");
-        }
-        if (!StringUtils.hasText(categoryIcon)) {
-            return ResultGenerator.genFailResult("请选择分类图标！");
-        }
-        if (categoryService.updateCategory(categoryId, categoryName, categoryIcon)) {
-            return ResultGenerator.genSuccessResult();
-        } else {
-            return ResultGenerator.genFailResult("分类名称重复");
-        }
+    @DeleteMapping("/delete")
+    public R deleteCategory(Long id) {
+        log.warn("Delete category id={}", id);
+        categoryService.removeById(id);
+        return R.ok();
     }
-
-
-    /**
-     * 分类删除
-     */
-    @RequestMapping(value = "/categories/delete", method = RequestMethod.POST)
-    @ResponseBody
-    public Result delete(@RequestBody Integer[] ids) {
-        if (ids.length < 1) {
-            return ResultGenerator.genFailResult("参数异常！");
-        }
-        if (categoryService.deleteBatch(ids)) {
-            return ResultGenerator.genSuccessResult();
-        } else {
-            return ResultGenerator.genFailResult("删除失败");
-        }
-    }
-
 }

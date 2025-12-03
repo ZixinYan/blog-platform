@@ -1,12 +1,19 @@
 package com.zixin.blogplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 import lombok.Getter;
 
 import java.util.Date;
 
-@Getter
+@Data
+@TableName("blog_link")
 public class BlogLink {
+    @TableId(type = IdType.AUTO)
     private Integer linkId;
 
     private Byte linkType;
@@ -19,6 +26,7 @@ public class BlogLink {
 
     private Integer linkRank;
 
+    @TableLogic(value = "0", delval = "1")
     private Byte isDeleted;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -36,22 +44,4 @@ public class BlogLink {
         this.linkDescription = linkDescription == null ? null : linkDescription.trim();
     }
 
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", linkId=").append(linkId);
-        sb.append(", linkType=").append(linkType);
-        sb.append(", linkName=").append(linkName);
-        sb.append(", linkUrl=").append(linkUrl);
-        sb.append(", linkDescription=").append(linkDescription);
-        sb.append(", linkRank=").append(linkRank);
-        sb.append(", isDeleted=").append(isDeleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append("]");
-        return sb.toString();
-    }
 }

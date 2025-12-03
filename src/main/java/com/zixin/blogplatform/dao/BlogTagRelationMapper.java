@@ -1,28 +1,19 @@
 package com.zixin.blogplatform.dao;
 
-import com.site.blog.my.core.entity.BlogTagRelation;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zixin.blogplatform.entity.BlogTagRelation;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
-public interface BlogTagRelationMapper {
-    int deleteByPrimaryKey(Long relationId);
-
-    int insert(BlogTagRelation record);
-
-    int insertSelective(BlogTagRelation record);
-
-    BlogTagRelation selectByPrimaryKey(Long relationId);
-
-    BlogTagRelation selectByBlogIdAndTagId(@Param("blogId") Long blogId, @Param("tagId") Integer tagId);
-
+@Mapper
+public interface BlogTagRelationMapper extends BaseMapper<BlogTagRelation> {
     List<Long> selectDistinctTagIds(Integer[] tagIds);
 
-    int updateByPrimaryKeySelective(BlogTagRelation record);
 
-    int updateByPrimaryKey(BlogTagRelation record);
 
     int batchInsert(@Param("relationList") List<BlogTagRelation> blogTagRelationList);
 
-    int deleteByBlogId(Long blogId);
 }
